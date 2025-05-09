@@ -12,6 +12,7 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : [
     "http://localhost:5173",
+    "https://lina-optic-app-frontend-khav.vercel.app",
       
       
     ];
