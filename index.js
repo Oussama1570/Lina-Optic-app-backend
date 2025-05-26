@@ -7,15 +7,17 @@ require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
 
-// ✅ Define allowed frontend origins
+// ✅ Include the correct frontend domain(s) here
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : [
-      "http://localhost:5173",
-      "https://lina-optic-app-frontend-khav.vercel.app",
+    "http://localhost:5173",
+    "https://lina-optic-app-frontend-khav.vercel.app",
+      
+      
     ];
 
-// ✅ Enable CORS
+// ✅ CORS setup
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -29,11 +31,10 @@ app.use(
   })
 );
 
-// ✅ Body parser and static files
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ✅ Register all routes
+// ✅ Routes
 app.use("/api/products", require("./src/products/product.route"));
 app.use("/api/orders", require("./src/orders/order.route"));
 app.use("/api/auth", require("./src/users/user.route"));
