@@ -1,61 +1,40 @@
 const express = require("express");
 const multer = require("multer");
-const path = require("path");
-const fs = require("fs");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../utils/cloudinary");
 
 const router = express.Router();
 
-// ✅ Ensure the /uploads directory exists
-const uploadPath = path.join(__dirname, "..", "..", "uploads");
-fs.mkdirSync(uploadPath, { recursive: true });
-
-// ✅ Multer disk storage setup
-const storage = multer.diskStorage({
-  destination(req, file, cb) {
-    cb(null, uploadPath);
-  },
-  filename(req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
+// ✅ Configure Cloudinary storage for Multer
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "lina-optic", // Folder in Cloudinary
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
+    transformation: [{ width: 800, height: 800, crop: "limit" }],
   },
 });
 
-// ✅ Multer upload handler
-const upload = multer({
-  storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // Max 5MB
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed"));
-    }
-  },
-});
+// ✅ Multer upload middleware
+const upload = multer({ storage });
 
-// ✅ POST /api/upload
+// ✅ POST /api/upload - Upload single image to Cloudinary
 router.post("/upload", upload.single("image"), (req, res) => {
-  // 🔐 Enforce CORS headers manually
-  res.setHeader("Access-Control-Allow-Origin", "*"); // You can restrict this in production
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-
   try {
-    if (!req.file) {
+    if (!req.file || !req.file.path) {
       return res.status(400).json({
         success: false,
-        message: "No image uploaded.",
+        message: "No image file provided.",
       });
     }
-
-    const imageUrl = `/uploads/${req.file.filename}`;
-    console.log("📸 Uploaded:", imageUrl);
 
     res.status(200).json({
       success: true,
       message: "Image uploaded successfully.",
-      image: imageUrl,
+      image: req.file.path, // ✅ Cloudinary URL
     });
   } catch (error) {
-    console.error("❌ Upload error:", error);
+    console.error("❌ Cloudinary upload error:", error);
     res.status(500).json({
       success: false,
       message: "Image upload failed.",
