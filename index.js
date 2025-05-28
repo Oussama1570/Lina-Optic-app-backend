@@ -13,31 +13,31 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
   : [
       "http://localhost:5173",
       "https://lina-optic-app-frontend-khav.vercel.app",
-      "https://lina-optic-app-frontend.vercel.app", // Optional fallback
+      "https://lina-optic-app-frontend.vercel.app"
     ];
 
-// ✅ Enable CORS with dynamic origin check
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
+// ✅ CORS configuration
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+}));
 
-// ✅ Handle preflight (OPTIONS) requests for all routes
+// ✅ Handle preflight (OPTIONS) for all routes
 app.options("*", cors());
 
-// ✅ Middleware for JSON parsing and static files
+// ✅ JSON parsing middleware
 app.use(express.json());
+
+// ✅ Serve uploaded images
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ API routes
+// ✅ Define API routes
 app.use("/api/products", require("./src/products/product.route"));
 app.use("/api/orders", require("./src/orders/order.route"));
 app.use("/api/auth", require("./src/users/user.route"));
@@ -55,17 +55,18 @@ const connectDB = async () => {
     console.log("✅ MongoDB connected successfully");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
-    setTimeout(connectDB, 5000); // Retry after 5s
+    setTimeout(connectDB, 5000); // Retry after 5 seconds
   }
 };
 
 connectDB();
 
-// ✅ Default route
+// ✅ Default root route
 app.get("/", (req, res) => {
   res.send("Lina Optic e-commerce Server is running!");
 });
 
+// ✅ Start the server
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
