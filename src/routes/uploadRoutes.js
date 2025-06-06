@@ -15,7 +15,7 @@ const storage = new CloudinaryStorage({
   },
 });
 
-// ✅ Configure Multer middleware
+// ✅ Configure Multer middleware //
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
