@@ -15,6 +15,8 @@ const storage = new CloudinaryStorage({
   },
 });
 
+// Do not upload avif images
+
 // ✅ Multer upload middleware
 const upload = multer({ storage });
 
