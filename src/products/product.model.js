@@ -25,8 +25,7 @@ const ProductSchema = new mongoose.Schema(
 
     mainCategory: { type: String, required: true },
     subCategory: { type: String, required: true },
-    indice: { type: String, required: false },
-    frameType: { type: String, required: false }, // ✅ Frame type added here
+    frameType: { type: String, required: false }, // ✅ Frame type remains
 
     coverImage: { type: String, required: true },
 
@@ -40,7 +39,6 @@ const ProductSchema = new mongoose.Schema(
     oldPrice: { type: Number, required: true },
     newPrice: { type: Number, required: true },
 
-    // 🟡 Optional global stock (can be calculated or removed)
     stockQuantity: { type: Number, required: true },
 
     trending: { type: Boolean, default: false },

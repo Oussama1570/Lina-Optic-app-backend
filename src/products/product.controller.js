@@ -19,7 +19,6 @@ const postAProduct = async (req, res) => {
       description,
       mainCategory,
       subCategory,
-      indice,
       frameType,
       brand,
       newPrice,
@@ -28,6 +27,7 @@ const postAProduct = async (req, res) => {
       trending,
     } = req.body;
 
+    // ✅ Validate categories and frameType
     const validMainCategories = ["Hommes", "Femmes", "Enfants"];
     const validSubCategories = ["Optique", "Solaire", "Lentilles"];
     const validFrameTypes = [
@@ -43,28 +43,18 @@ const postAProduct = async (req, res) => {
       "Cadre aviateur",
       "Cadre ovale",
     ];
-    
+
     if (!validMainCategories.includes(mainCategory)) {
-      return res.status(400).json({
-        success: false,
-        message: "❌ Invalid main category.",
-      });
+      return res.status(400).json({ success: false, message: "❌ Invalid main category." });
     }
-    
+
     if (!validSubCategories.includes(subCategory)) {
-      return res.status(400).json({
-        success: false,
-        message: "❌ Invalid sub category.",
-      });
+      return res.status(400).json({ success: false, message: "❌ Invalid sub category." });
     }
-    
+
     if (frameType && !validFrameTypes.includes(frameType)) {
-      return res.status(400).json({
-        success: false,
-        message: "❌ Invalid frame type.",
-      });
+      return res.status(400).json({ success: false, message: "❌ Invalid frame type." });
     }
-    
 
     if (!Array.isArray(colors) || colors.length === 0) {
       return res.status(400).json({
@@ -73,8 +63,10 @@ const postAProduct = async (req, res) => {
       });
     }
 
+    // ✅ Extract cover image from first color
     const coverImage = colors[0]?.image || "";
 
+    // ✅ Translate each color name
     const translatedColors = await Promise.all(
       colors.map(async (color) => {
         const baseColor =
@@ -93,6 +85,7 @@ const postAProduct = async (req, res) => {
 
     const stockQuantity = translatedColors[0]?.stock || 0;
 
+    // ✅ Translations for title and description
     const translations = {
       en: { title, description },
       fr: {
@@ -105,13 +98,13 @@ const postAProduct = async (req, res) => {
       },
     };
 
+    // ✅ Prepare product object
     const productData = {
       title,
       description,
       translations,
       mainCategory,
       subCategory,
-      indice,
       frameType,
       coverImage,
       colors: translatedColors,
@@ -122,6 +115,7 @@ const postAProduct = async (req, res) => {
       trending,
     };
 
+    // ✅ Save product
     const newProduct = new Product(productData);
     await newProduct.save();
 
@@ -135,6 +129,7 @@ const postAProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to create product" });
   }
 };
+
 
 
 
@@ -168,6 +163,7 @@ const getSingleProduct = async (req, res) => {
 };
 
 // ✅ Update Product with auto translations
+// ✅ Update Product with auto translations
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -177,7 +173,6 @@ const updateProduct = async (req, res) => {
       description,
       mainCategory,
       subCategory,
-      indice,
       frameType,
       newPrice,
       oldPrice,
@@ -186,52 +181,43 @@ const updateProduct = async (req, res) => {
       trending,
     } = req.body;
 
+    // ✅ Validate inputs
     const validMainCategories = ["Hommes", "Femmes", "Enfants"];
-const validSubCategories = ["Optique", "Solaire", "Lentilles"];
-const validFrameTypes = [
-  "Plein cadre",
-  "Demi-cadre (semi-cerclé)",
-  "Sans cadre (invisible)",
-  "Cadre en plastique",
-  "Cadre en métal",
-  "Cadre rond",
-  "Cadre carré",
-  "Cadre rectangulaire",
-  "Cadre papillon",
-  "Cadre aviateur",
-  "Cadre ovale",
-];
+    const validSubCategories = ["Optique", "Solaire", "Lentilles"];
+    const validFrameTypes = [
+      "Plein cadre",
+      "Demi-cadre (semi-cerclé)",
+      "Sans cadre (invisible)",
+      "Cadre en plastique",
+      "Cadre en métal",
+      "Cadre rond",
+      "Cadre carré",
+      "Cadre rectangulaire",
+      "Cadre papillon",
+      "Cadre aviateur",
+      "Cadre ovale",
+    ];
 
-if (!validMainCategories.includes(mainCategory)) {
-  return res.status(400).json({
-    success: false,
-    message: "❌ Invalid main category.",
-  });
-}
-
-if (!validSubCategories.includes(subCategory)) {
-  return res.status(400).json({
-    success: false,
-    message: "❌ Invalid sub category.",
-  });
-}
-
-if (frameType && !validFrameTypes.includes(frameType)) {
-  return res.status(400).json({
-    success: false,
-    message: "❌ Invalid frame type.",
-  });
-}
-
-    if (!Array.isArray(colors) || colors.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one color must be provided.",
-      });
+    if (!validMainCategories.includes(mainCategory)) {
+      return res.status(400).json({ success: false, message: "❌ Invalid main category." });
     }
 
+    if (!validSubCategories.includes(subCategory)) {
+      return res.status(400).json({ success: false, message: "❌ Invalid sub category." });
+    }
+
+    if (frameType && !validFrameTypes.includes(frameType)) {
+      return res.status(400).json({ success: false, message: "❌ Invalid frame type." });
+    }
+
+    if (!Array.isArray(colors) || colors.length === 0) {
+      return res.status(400).json({ success: false, message: "At least one color must be provided." });
+    }
+
+    // ✅ Cover image from first color
     const coverImage = colors[0]?.image || "";
 
+    // ✅ Translate color names
     const translatedColors = await Promise.all(
       colors.map(async (color) => {
         const baseColor =
@@ -250,6 +236,7 @@ if (frameType && !validFrameTypes.includes(frameType)) {
 
     const stockQuantity = translatedColors[0]?.stock || 0;
 
+    // ✅ Translate title and description
     const translations = {
       en: { title, description },
       fr: {
@@ -262,13 +249,13 @@ if (frameType && !validFrameTypes.includes(frameType)) {
       },
     };
 
+    // ✅ Construct update payload
     const updateData = {
       title,
       description,
       translations,
       mainCategory,
       subCategory,
-      indice,
       frameType,
       coverImage,
       colors: translatedColors,
@@ -300,6 +287,7 @@ if (frameType && !validFrameTypes.includes(frameType)) {
     res.status(500).json({ success: false, message: "Failed to update product" });
   }
 };
+
 
 
 
