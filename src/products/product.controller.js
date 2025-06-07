@@ -27,7 +27,7 @@ const postAProduct = async (req, res) => {
       trending,
     } = req.body;
 
-    // ✅ Validate categories and frameType
+    // ✅ Validate input categories
     const validMainCategories = ["Hommes", "Femmes", "Enfants"];
     const validSubCategories = ["Optique", "Solaire", "Lentilles"];
     const validFrameTypes = [
@@ -63,29 +63,28 @@ const postAProduct = async (req, res) => {
       });
     }
 
-    // ✅ Extract cover image from first color
-    const coverImage = colors[0]?.image || "";
-
-    // ✅ Translate each color name
+    // ✅ Translate color names and structure images array
     const translatedColors = await Promise.all(
       colors.map(async (color) => {
         const baseColor =
           typeof color.colorName === "object" ? color.colorName.en : color.colorName;
+
         return {
           colorName: {
             en: baseColor,
             fr: await translateDetails(baseColor, "fr"),
             ar: await translateDetails(baseColor, "ar"),
           },
-          image: color.image,
+          images: Array.isArray(color.images) ? color.images : [color.image],
           stock: Number(color.stock) || 0,
         };
       })
     );
 
-    const stockQuantity = translatedColors[0]?.stock || 0;
+    // ✅ Set cover image from the first image of the first color
+    const coverImage = translatedColors[0]?.images?.[0] || "";
 
-    // ✅ Translations for title and description
+    // ✅ Translate product title & description
     const translations = {
       en: { title, description },
       fr: {
@@ -98,7 +97,9 @@ const postAProduct = async (req, res) => {
       },
     };
 
-    // ✅ Prepare product object
+    const stockQuantity = translatedColors[0]?.stock || 0;
+
+    // ✅ Construct product data
     const productData = {
       title,
       description,
@@ -115,7 +116,7 @@ const postAProduct = async (req, res) => {
       trending,
     };
 
-    // ✅ Save product
+    // ✅ Save to database
     const newProduct = new Product(productData);
     await newProduct.save();
 
@@ -129,9 +130,6 @@ const postAProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to create product" });
   }
 };
-
-
-
 
 
 // ✅ Get All Products
@@ -163,7 +161,6 @@ const getSingleProduct = async (req, res) => {
 };
 
 // ✅ Update Product with auto translations
-// ✅ Update Product with auto translations
 const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -181,7 +178,7 @@ const updateProduct = async (req, res) => {
       trending,
     } = req.body;
 
-    // ✅ Validate inputs
+    // ✅ Validation
     const validMainCategories = ["Hommes", "Femmes", "Enfants"];
     const validSubCategories = ["Optique", "Solaire", "Lentilles"];
     const validFrameTypes = [
@@ -211,32 +208,31 @@ const updateProduct = async (req, res) => {
     }
 
     if (!Array.isArray(colors) || colors.length === 0) {
-      return res.status(400).json({ success: false, message: "At least one color must be provided." });
+      return res.status(400).json({ success: false, message: "At least one color is required." });
     }
 
-    // ✅ Cover image from first color
-    const coverImage = colors[0]?.image || "";
-
-    // ✅ Translate color names
+    // ✅ Translate colors
     const translatedColors = await Promise.all(
       colors.map(async (color) => {
         const baseColor =
           typeof color.colorName === "object" ? color.colorName.en : color.colorName;
+
         return {
           colorName: {
             en: baseColor,
             fr: await translateDetails(baseColor, "fr"),
             ar: await translateDetails(baseColor, "ar"),
           },
-          image: color.image,
+          images: Array.isArray(color.images) ? color.images : [color.image],
           stock: Number(color.stock) || 0,
         };
       })
     );
 
+    const coverImage = translatedColors[0]?.images?.[0] || "";
     const stockQuantity = translatedColors[0]?.stock || 0;
 
-    // ✅ Translate title and description
+    // ✅ Translate product title & description
     const translations = {
       en: { title, description },
       fr: {
@@ -249,8 +245,7 @@ const updateProduct = async (req, res) => {
       },
     };
 
-    // ✅ Construct update payload
-    const updateData = {
+    const updatedProductData = {
       title,
       description,
       translations,
@@ -266,7 +261,7 @@ const updateProduct = async (req, res) => {
       trending,
     };
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+    const updatedProduct = await Product.findByIdAndUpdate(id, updatedProductData, {
       new: true,
     });
 
@@ -287,7 +282,6 @@ const updateProduct = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update product" });
   }
 };
-
 
 
 

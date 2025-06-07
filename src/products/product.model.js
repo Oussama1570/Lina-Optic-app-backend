@@ -1,13 +1,13 @@
 const mongoose = require("mongoose");
 
-// ✅ Color schema with multilingual colorName and stock per color
+// ✅ Color schema with multilingual colorName and multiple images
 const ColorSchema = new mongoose.Schema({
   colorName: {
     en: { type: String, required: true },
     fr: { type: String, required: true },
     ar: { type: String, required: true },
   },
-  image: { type: String, required: true },
+  images: [{ type: String, required: true }], // ✅ Multiple images per color
   stock: { type: Number, required: true, default: 0 }, // ✅ Stock per color
 });
 
@@ -25,7 +25,7 @@ const ProductSchema = new mongoose.Schema(
 
     mainCategory: { type: String, required: true },
     subCategory: { type: String, required: true },
-    frameType: { type: String, required: false }, // ✅ Frame type remains
+    frameType: { type: String, required: false },
 
     coverImage: { type: String, required: true },
 
