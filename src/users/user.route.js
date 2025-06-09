@@ -67,14 +67,7 @@ router.post("/reset-password-request", async (req, res) => {
   const { email } = req.body;
 
   try {
-    const actionCodeSettings = {
-  url: "https://lina-optic-app-frontend-khav.vercel.app/login", // ✅ or your real login/reset page
-  handleCodeInApp: true,
-};
-
-const resetLink = await admin.auth().generatePasswordResetLink(email, actionCodeSettings);
-
-
+    const resetLink = await admin.auth().generatePasswordResetLink(email);
     console.log("🔗 Firebase reset link:", resetLink);
 
     // 📧 Improved email content
@@ -111,4 +104,3 @@ const resetLink = await admin.auth().generatePasswordResetLink(email, actionCode
 
 
 module.exports = router;
-
