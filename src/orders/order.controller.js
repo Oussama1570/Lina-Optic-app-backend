@@ -5,24 +5,29 @@ const mongoose = require("mongoose");
 const translate = require("translate-google");
 
 
+
 // ✅ Create a New Order
 const createAOrder = async (req, res) => {
   try {
+    console.log("📦 Incoming order request from email:", req.body.email);
+
+    // ✅ Prepare products array
     const products = await Promise.all(
       req.body.products.map(async (product) => {
         const productData = await Product.findById(product.productId);
         if (!productData) throw new Error(`Product not found: ${product.productId}`);
 
-        const selectedColor = product?.color?.colorName && typeof product.color.colorName === "object"
-          ? product.color
-          : {
-              colorName: {
-                en: product.color?.colorName?.en || product.color?.colorName || "Original",
-                fr: product.color?.colorName?.fr || product.color?.colorName || "Original",
-                ar: product.color?.colorName?.ar || "أصلي",
-              },
-              image: product.color?.image || product.coverImage || productData.coverImage,
-            };
+        const selectedColor =
+          product?.color?.colorName && typeof product.color.colorName === "object"
+            ? product.color
+            : {
+                colorName: {
+                  en: product.color?.colorName?.en || product.color?.colorName || "Original",
+                  fr: product.color?.colorName?.fr || product.color?.colorName || "Original",
+                  ar: product.color?.colorName?.ar || "أصلي",
+                },
+                image: product.color?.image || product.coverImage || productData.coverImage,
+              };
 
         return {
           productId: product.productId,
@@ -32,31 +37,44 @@ const createAOrder = async (req, res) => {
       })
     );
 
+    // ✅ Create and save the order
     const newOrder = new Order({ ...req.body, products });
     const savedOrder = await newOrder.save();
 
+    console.log("✅ Order saved successfully for:", savedOrder.email);
+
+    // ✅ Update stock quantities
     for (const orderedProduct of products) {
       const product = await Product.findById(orderedProduct.productId);
       if (!product) continue;
 
-      const colorIndex = product.colors.findIndex((color) =>
-        color && color.colorName && (
-          color.colorName.en === orderedProduct.color.colorName.en ||
-          color.colorName.fr === orderedProduct.color.colorName.fr ||
-          color.colorName.ar === orderedProduct.color.colorName.ar
-        )
-      );
+      const normalize = (str) => (str || "").trim().toLowerCase();
 
-      if (colorIndex !== -1) {
-        product.colors[colorIndex].stock = Math.max(
-          (product.colors[colorIndex].stock || 0) - orderedProduct.quantity,
-          0
+      const matchedColorIndex = product.colors.findIndex((color) => {
+        const name = orderedProduct.color.colorName;
+        return (
+          normalize(color?.colorName?.en) === normalize(name?.en) ||
+          normalize(color?.colorName?.fr) === normalize(name?.fr) ||
+          normalize(color?.colorName?.ar) === normalize(name?.ar)
         );
+      });
 
+      if (matchedColorIndex !== -1) {
+        const currentStock = product.colors[matchedColorIndex].stock || 0;
+        const newStock = Math.max(currentStock - orderedProduct.quantity, 0);
+        product.colors[matchedColorIndex].stock = newStock;
+
+        // ✅ Recalculate total stock
         product.stockQuantity = product.colors.reduce(
           (sum, color) => sum + (color.stock || 0),
           0
         );
+
+        // ✅ Debug stock update
+        console.log(`🛒 Stock updated for ${product.title}`);
+        console.log(`➡️ Color: ${orderedProduct.color.colorName.en}`);
+        console.log(`➡️ New color stock: ${product.colors[matchedColorIndex].stock}`);
+        console.log(`➡️ New total stock: ${product.stockQuantity}`);
 
         await product.save();
       }
@@ -64,28 +82,34 @@ const createAOrder = async (req, res) => {
 
     res.status(200).json(savedOrder);
   } catch (error) {
-    res.status(500).json({ message: error.message || "Failed to create order" });
+    console.error("❌ Error creating order:", error.message);
+    res.status(500).json({
+      message: error.message || "Failed to create order",
+    });
   }
 };
+
+
 
 
 // ✅ Get Orders by Customer Email
 const getOrderByEmail = async (req, res) => {
   try {
     const { email } = req.params;
+
     const orders = await Order.find({ email })
       .sort({ createdAt: -1 })
       .populate("products.productId", "title colors coverImage");
 
-    if (!orders || orders.length === 0) {
-      return res.status(404).json({ message: "No orders found" });
-    }
-    res.status(200).json(orders);
+    // ✅ Always return 200 with an array (even if empty)
+    return res.status(200).json(orders);
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    res.status(500).json({ message: "Failed to fetch orders" });
+    console.error("❌ Error fetching orders by email:", error);
+    return res.status(500).json({ message: "Failed to fetch orders" });
   }
 };
+
+
 
 // ✅ Get a single order by ID
 const getOrderById = async (req, res) => {
@@ -103,7 +127,6 @@ const getOrderById = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order by ID" });
   }
 };
-
 
 // ✅ Get All Orders (Admin)
 const getAllOrders = async (req, res) => {
@@ -152,7 +175,7 @@ const updateOrder = async (req, res) => {
     console.error("Error updating order:", error);
     res.status(500).json({ message: "Failed to update order" });
   }
-};
+}; // ✅ ajoute cette ligne ici
 
 // ✅ Remove a Product from an Order
 const removeProductFromOrder = async (req, res) => {
@@ -243,11 +266,12 @@ product.colors[colorIndex].stock = Math.max(
     await order.save();
 
     res.status(200).json({ message: "Product updated successfully" });
-  } catch (error) {
-    console.error("❌ Error updating order:", error);
-    res.status(500).json({ message: error.message || "Failed to update order" });
+    } catch (error) {
+    console.error("Error updating order:", error);
+    res.status(500).json({ message: "Failed to update order" });
   }
-};
+}; // ✅ <--- ajoute cette ligne (accolade + point-virgule)
+
 
 
 
@@ -421,4 +445,5 @@ module.exports = {
   sendOrderNotification,
   removeProductFromOrder,
 };
+
 
