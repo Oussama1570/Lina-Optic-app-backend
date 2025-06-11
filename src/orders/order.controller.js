@@ -334,7 +334,7 @@ const deleteOrder = async (req, res) => {
 
 
 
-// ✅ Send Order Notification via Email
+// ✅ Send Order Notification via Email (French only)
 const sendOrderNotification = async (req, res) => {
   try {
     const { orderId, email, productKey, progress, articleIndex } = req.body;
@@ -374,7 +374,6 @@ const sendOrderNotification = async (req, res) => {
     }
 
     const articleText = articleIndex ? ` (Article #${articleIndex})` : "";
-    const articleTextAr = articleIndex ? ` (المقالة رقم ${articleIndex})` : "";
 
     const subject =
       progress === 100
@@ -382,30 +381,25 @@ const sendOrderNotification = async (req, res) => {
         : `Commande ${shortOrderId}${articleText} – Suivi de la confection artisanale (${progress}%)`;
 
     const htmlMessage = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-        <p><strong>Cher ${customerName}</strong>,</p>
-        <p>
-          Votre article <strong>${matchedProduct.productId.title}</strong> (Couleur : <strong>${colorName}</strong>)${articleText}, 
-          dans la commande n°${shortOrderId}, est actuellement <strong>terminé à ${progress}%</strong>.
-        </p>
-        ${
-          progress === 100
-            ? `<p><strong>Bonne nouvelle !</strong> Votre article est prêt pour la livraison.</p>`
-            : `<p>Nous vous tiendrons informé dès qu'il sera terminé.</p>`
-        }
-        <hr />
-        <p dir="rtl"><strong>عزيزي ${customerName}</strong>،</p>
-        <p dir="rtl">
-          طلبك <strong>${matchedProduct.productId.title}</strong> (اللون: <strong>${colorName}</strong>)${articleTextAr}،
-          برقم ${shortOrderId}، جاهز بنسبة <strong>${progress}%</strong>.
-        </p>
-        ${
-          progress === 100
-            ? `<p dir="rtl"><strong>خبر سار!</strong> المنتج جاهز للتسليم.</p>`
-            : `<p dir="rtl">سنقوم بإبلاغك عند الانتهاء الكامل.</p>`
-        }
-      </div>
-    `;
+  <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+    <p><strong>Bonjour ${customerName}</strong>,</p>
+    <p>
+      Votre article <strong>${matchedProduct.productId.title}</strong> (Couleur : <strong>${colorName}</strong>)${articleText}, 
+      dans la commande n°<strong>${shortOrderId}</strong>, est actuellement <strong>terminé à ${progress}%</strong>.
+    </p>
+    ${
+      progress === 100
+        ? `<p><strong>Bonne nouvelle !</strong> Votre article est prêt pour la livraison.</p>`
+        : `<p>Nous vous tiendrons informé dès que la confection sera terminée.</p>`
+    }
+    <hr />
+    <p style="font-size: 0.9em; color: #666;">
+      Merci pour votre confiance.<br />
+      Lina Optic
+    </p>
+  </div>
+`;
+
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -426,14 +420,17 @@ const sendOrderNotification = async (req, res) => {
 
     res
       .status(200)
-      .json({ message: "Notification sent successfully in French and Arabic." });
+      .json({ message: "Notification envoyée avec succès en français." });
   } catch (error) {
-    console.error("Error sending notification:", error);
-    res
-      .status(500)
-      .json({ message: "Error sending notification", error: error.message });
+    console.error("Erreur lors de l'envoi de la notification :", error);
+    res.status(500).json({
+      message: "Erreur lors de l'envoi de la notification",
+      error: error.message,
+    });
   }
 };
+
+
 
 module.exports = {
   createAOrder,
