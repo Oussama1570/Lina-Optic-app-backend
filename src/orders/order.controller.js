@@ -360,17 +360,22 @@ const sendOrderNotification = async (req, res) => {
     const shortOrderId = String(order._id).slice(0, 8);
     const [productId, colorName] = productKey.split("|");
 
-    const matchedProduct = order.products.find(
-      (p) =>
-        p.productId?._id?.toString() === productId &&
-        (p.color?.colorName === colorName ||
-          p.color?.colorName?.en === colorName ||
-          p.color?.colorName?.fr === colorName ||
-          p.color?.colorName?.ar === colorName)
-    );
+    // ✅ Find the matched product with flexible color name support
+    const matchedProduct = order.products.find((p) => {
+      if (!p.productId || !p.color || !p.color.colorName) return false;
+      const pIdMatch = p.productId._id?.toString() === productId;
+      const colorValues = typeof p.color.colorName === "object"
+        ? Object.values(p.color.colorName)
+        : [p.color.colorName];
+      return pIdMatch && colorValues.includes(colorName);
+    });
 
     if (!matchedProduct) {
       return res.status(404).json({ message: "Product not found in order" });
+    }
+
+    if (!matchedProduct.productId.title) {
+      return res.status(500).json({ message: "Product title is missing" });
     }
 
     const articleText = articleIndex ? ` (Article #${articleIndex})` : "";
@@ -381,25 +386,24 @@ const sendOrderNotification = async (req, res) => {
         : `Commande ${shortOrderId}${articleText} – Suivi de la confection artisanale (${progress}%)`;
 
     const htmlMessage = `
-  <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-    <p><strong>Bonjour ${customerName}</strong>,</p>
-    <p>
-      Votre article <strong>${matchedProduct.productId.title}</strong> (Couleur : <strong>${colorName}</strong>)${articleText}, 
-      dans la commande n°<strong>${shortOrderId}</strong>, est actuellement <strong>terminé à ${progress}%</strong>.
-    </p>
-    ${
-      progress === 100
-        ? `<p><strong>Bonne nouvelle !</strong> Votre article est prêt pour la livraison.</p>`
-        : `<p>Nous vous tiendrons informé dès que la confection sera terminée.</p>`
-    }
-    <hr />
-    <p style="font-size: 0.9em; color: #666;">
-      Merci pour votre confiance.<br />
-      Lina Optic
-    </p>
-  </div>
-`;
-
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <p><strong>Bonjour ${customerName}</strong>,</p>
+        <p>
+          Votre article <strong>${matchedProduct.productId.title}</strong> (Couleur : <strong>${colorName}</strong>)${articleText}, 
+          dans la commande n°<strong>${shortOrderId}</strong>, est actuellement <strong>terminé à ${progress}%</strong>.
+        </p>
+        ${
+          progress === 100
+            ? `<p><strong>Bonne nouvelle !</strong> Votre article est prêt pour la livraison.</p>`
+            : `<p>Nous vous tiendrons informé dès que la confection sera terminée.</p>`
+        }
+        <hr />
+        <p style="font-size: 0.9em; color: #666;">
+          Merci pour votre confiance.<br />
+          Lina Optic
+        </p>
+      </div>
+    `;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
@@ -418,9 +422,7 @@ const sendOrderNotification = async (req, res) => {
 
     await transporter.sendMail(mailOptions);
 
-    res
-      .status(200)
-      .json({ message: "Notification envoyée avec succès en français." });
+    res.status(200).json({ message: "Notification envoyée avec succès en français." });
   } catch (error) {
     console.error("Erreur lors de l'envoi de la notification :", error);
     res.status(500).json({
@@ -429,6 +431,7 @@ const sendOrderNotification = async (req, res) => {
     });
   }
 };
+
 
 
 
