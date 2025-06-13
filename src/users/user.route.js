@@ -2,34 +2,40 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("./user.model");
-const admin = require("../utils/firebaseAdmin"); // Firebase Admin SDK
+const admin = require("../utils/firebaseAdmin"); // 🔐 Firebase Admin SDK instance
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET_KEY;
 
 /**
  * ✅ Admin Login (MongoDB only)
+ * This route authenticates an admin using stored credentials in MongoDB.
  */
 router.post("/admin", async (req, res) => {
   const { username, password } = req.body;
 
   try {
+    // 🔍 Find user by username
     const adminUser = await User.findOne({ username });
     if (!adminUser) {
       return res.status(404).json({ message: "Admin not found!" });
     }
 
-    const isPasswordValid = adminUser.password === password; // In production: use bcrypt.compare
+    // ❗ Password check (plaintext comparison)
+    // NOTE: In production, use bcrypt.compare for security
+    const isPasswordValid = adminUser.password === password;
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid password!" });
     }
 
+    // 🪙 Generate JWT token with role and username
     const token = jwt.sign(
       { id: adminUser._id, username: adminUser.username, role: adminUser.role },
       JWT_SECRET,
-      { expiresIn: "30d" }
+      { expiresIn: "30d" } // Token valid for 30 days
     );
 
+    // ✅ Send back auth info
     return res.status(200).json({
       message: "Authentication successful",
       token,
@@ -47,6 +53,7 @@ router.post("/admin", async (req, res) => {
 
 /**
  * ✅ Count MongoDB Admin Users
+ * Returns the total number of admin users stored in MongoDB.
  */
 router.get("/admin/users/count", async (req, res) => {
   try {
@@ -60,6 +67,7 @@ router.get("/admin/users/count", async (req, res) => {
 
 /**
  * ✅ Firebase: Send Reset Password Email to Firebase Users
+ * This route sends a password reset email using Firebase Auth and a custom email template.
  */
 const sendEmail = require("../utils/sendEmail");
 
@@ -67,10 +75,11 @@ router.post("/reset-password-request", async (req, res) => {
   const { email } = req.body;
 
   try {
+    // 🔗 Generate Firebase password reset link
     const resetLink = await admin.auth().generatePasswordResetLink(email);
     console.log("🔗 Firebase reset link:", resetLink);
 
-    // 📧 Improved email content
+    // 💌 Compose custom email content in HTML
     const subject = "🔐 Réinitialisation de votre mot de passe - Lina Optic";
     const html = `
       <div style="font-family: Arial, sans-serif; color: #333;">
@@ -88,8 +97,10 @@ router.post("/reset-password-request", async (req, res) => {
       </div>
     `;
 
+    // 📤 Send email using configured sendEmail utility
     await sendEmail(email, subject, html);
 
+    // ✅ Respond with success message
     res.status(200).json({
       message: "📩 Un email de réinitialisation a été envoyé. Veuillez vérifier votre boîte de réception."
     });
@@ -100,7 +111,5 @@ router.post("/reset-password-request", async (req, res) => {
     });
   }
 });
-
-
 
 module.exports = router;

@@ -1,13 +1,21 @@
+// ===============================
+// 📦 Import Dependencies
+// ===============================
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const path = require("path");
 require("dotenv").config();
 
+// ===============================
+// 🚀 Initialize App
+// ===============================
 const app = express();
 const port = process.env.PORT || 5000;
 
-// ✅ Define allowed frontend domains
+// ===============================
+// 🌐 Define Allowed Origins for CORS
+// ===============================
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
   : [
@@ -16,7 +24,9 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS
       "https://lina-optic-app-frontend.vercel.app"
     ];
 
-// ✅ CORS configuration
+// ===============================
+// 🛡️ Apply CORS Middleware
+// ===============================
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -28,16 +38,20 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ Handle preflight (OPTIONS) for all routes
+// ✅ Handle CORS Preflight Requests Globally
 app.options("*", cors());
 
-// ✅ JSON parsing middleware
-app.use(express.json());
+// ===============================
+// 🧾 Middleware
+// ===============================
+app.use(express.json()); // Parse incoming JSON requests
 
-// ✅ Serve uploaded images
+// ✅ Serve Static Files (Uploaded Images)
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// ✅ Define API routes
+// ===============================
+// 🔗 API Route Registrations
+// ===============================
 app.use("/api/products", require("./src/products/product.route"));
 app.use("/api/orders", require("./src/orders/order.route"));
 app.use("/api/auth", require("./src/users/user.route"));
@@ -45,7 +59,16 @@ app.use("/api/admin", require("./src/stats/admin.stats"));
 app.use("/api", require("./src/routes/uploadRoutes"));
 app.use("/api/contact", require("./src/contact-form/contact-form.route"));
 
-// ✅ MongoDB connection
+// ===============================
+// 🌐 Default Root Route
+// ===============================
+app.get("/", (req, res) => {
+  res.send("Lina Optic e-commerce Server is running!");
+});
+
+// ===============================
+// 🔌 Connect to MongoDB
+// ===============================
 const connectDB = async () => {
   try {
     await mongoose.connect(process.env.DB_URL, {
@@ -55,18 +78,14 @@ const connectDB = async () => {
     console.log("✅ MongoDB connected successfully");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
-    setTimeout(connectDB, 5000); // Retry after 5 seconds
+    setTimeout(connectDB, 5000); // Retry connection after 5 seconds
   }
 };
-
 connectDB();
 
-// ✅ Default root route
-app.get("/", (req, res) => {
-  res.send("Lina Optic e-commerce Server is running!");
-});
-
-// ✅ Start the server
+// ===============================
+// 🚀 Start Express Server
+// ===============================
 app.listen(port, () => {
   console.log(`🚀 Server running on port ${port}`);
 });
